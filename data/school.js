@@ -31,7 +31,7 @@ module.exports = {
       // 显示图标
       icon: '/images/magazine.png',
       // 小程序id
-      appId: 'wx0a954435bd49aca4',
+      appId: '',
     },
   ],
 
