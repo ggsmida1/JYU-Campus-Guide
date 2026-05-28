@@ -138,6 +138,11 @@
   </view>
 
   <view class="bottom-font"> {{miniprogram_name}}小程序 | 版权归开发者所有 </view>
+
+  <!-- 二维码全屏预览 -->
+  <view class="preview-mask" wx:if="{{showPreview}}" bindtap="closePreview">
+    <image class="preview-img" src="{{previewImg}}" mode="widthFix" catchtap="closePreview"></image>
+  </view>
 </view>
 
 <mp-dialog title="友情链接" show="{{dialogShow}}" bindbuttontap="mapmarker" buttons="{{buttons}}">

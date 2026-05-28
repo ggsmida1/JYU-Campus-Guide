@@ -51,6 +51,8 @@ Page({
     duration: 1500, // 滑动时间
 
     dialogShow: false,
+    showPreview: false,
+    previewImg: '',
     buttons: [
       {
         text: '关闭',
@@ -109,9 +111,16 @@ Page({
   // 公众号二维码
   towechat(e) {
     let img = e.currentTarget.dataset.img;
-    wx.previewImage({
-      current: img,
-      urls: this.data.guanwei.map(item => item.img),
+    this.setData({
+      previewImg: img,
+      showPreview: true,
+    });
+  },
+
+  // 关闭二维码预览
+  closePreview() {
+    this.setData({
+      showPreview: false,
     });
   },
 

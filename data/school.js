@@ -9,17 +9,17 @@ module.exports = {
       // 显示图标
       icon: '/images/school_icon.png',
       // 二维码图片链接
-      img: 'https://cdnjson.com/images/2023/04/30/guanwei.png',
+      img: '/images/qrcode_school.png',
     },
     {
       name: '图书馆',
       icon: '/images/book.png',
-      img: 'https://s1.imagehub.cc/images/2024/02/07/a9e42b78adace1b3f93484530613c84c.png',
+      img: '/images/qrcode_lib.png',
     },
     {
       name: '财务处',
       icon: '/images/new.png',
-      img: 'https://s1.imagehub.cc/images/2024/02/07/8e8dae8b402c4c4ed236d7fbe4a9d913.png',
+      img: '/images/qrcode_caiwu.png',
     },
   ],
 
