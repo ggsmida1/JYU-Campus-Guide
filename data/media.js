@@ -2,7 +2,7 @@
 // 媒体相关（图片和视频）
 module.exports = {
   // 联系作者
-  contact: 'https://cdnjson.com/images/2023/02/26/contact.png',
+  contact: '/images/contact_qrcode.png',
   // 小程序码
   miniprogramming_ma:
     'https://s1.imagehub.cc/images/2024/03/20/b2b3bfb91a1ee49b269b93f6ffed651e.jpeg',

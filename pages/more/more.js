@@ -23,6 +23,9 @@ Page({
     miniprogramming_ma: media.miniprogramming_ma,
 
     admin: media.admin,
+
+    showPreview: false,
+    previewImg: '',
   },
 
   // 软件声明
@@ -46,14 +49,8 @@ Page({
       content: '如果遇到什么问题\n请点击确认与我联系',
       success: res => {
         if (res.confirm == true) {
-          wx.previewImage({
-            current: this.data.contact, // 当前显示图片的http链接
-            urls: [this.data.contact], // 需要预览的图片http链接列表
-          });
+          this.setData({ previewImg: this.data.contact, showPreview: true });
         }
-      },
-      fail(err) {
-        console.log('fail', err);
       },
     });
   },
@@ -65,16 +62,14 @@ Page({
       content: '点击确认即可查看小程序码\n长按小程序码即可转发给好友',
       success: res => {
         if (res.confirm == true) {
-          wx.previewImage({
-            current: this.data.miniprogramming_ma, // 当前显示图片的http链接
-            urls: [this.data.miniprogramming_ma], // 需要预览的图片http链接列表
-          });
+          this.setData({ previewImg: this.data.miniprogramming_ma, showPreview: true });
         }
       },
-      fail(err) {
-        console.log('fail', err);
-      },
     });
+  },
+
+  closePreview() {
+    this.setData({ showPreview: false });
   },
 
   // 管理界面

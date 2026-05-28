@@ -96,4 +96,9 @@
       <text decode="{{true}}">{{miniprogram_name}}&ensp;|&ensp;版权归开发者所有</text>
     </view>
   </view>
+
+  <!-- 二维码全屏预览 -->
+  <view class="preview-mask" wx:if="{{showPreview}}" bindtap="closePreview">
+    <image class="preview-img" src="{{previewImg}}" mode="widthFix"></image>
+  </view>
 </view>
