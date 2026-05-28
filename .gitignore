@@ -13,3 +13,23 @@ Thumbs.db
 
 # 忽略所有云函数的依赖
 cloudfunctions/**/node_modules/
+
+# 微信小程序相关
+*.zip
+miniprogram_npm/
+.project.sw.json
+
+# IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 环境变量 / 敏感配置（如有）
+.env
+.env.local
+
+# 临时文件
+temp/
+tmp/
