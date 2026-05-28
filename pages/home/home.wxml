@@ -157,16 +157,5 @@
       <image class="list-row-container-img" src="{{item.icon}}" />
       <view class="list-row-container-text"> {{item.name}} </view>
     </view>
-
-    <view
-      wx:for="{{AppID}}"
-      wx:key="index"
-      data-app-id="{{item.appId}}"
-      class="list-row-container"
-      bindtap="toMiniProgram"
-    >
-      <image class="list-row-container-img" src="{{item.icon}}" />
-      <view class="list-row-container-text"> {{item.name}} </view>
-    </view>
   </view>
 </mp-dialog>

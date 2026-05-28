@@ -21,17 +21,10 @@ module.exports = {
       icon: '/images/new.png',
       img: '/images/qrcode_caiwu.png',
     },
-  ],
-
-  // 学校小程序AppID
-  AppID: [
     {
-      // 显示名
       name: '招生',
-      // 显示图标
       icon: '/images/magazine.png',
-      // 小程序id
-      appId: '',
+      img: '/images/JiaYing_ZhaoSheng.png',
     },
   ],
 

@@ -17,9 +17,8 @@ Page({
     school_information: school.school_information,
 
     guanwei: school.guanwei,
-    AppID: school.AppID,
 
-    laba: media.laba,
+laba: media.laba,
     school_logo: media.school_logo,
 
     function_buttons: media.function_buttons,
@@ -124,15 +123,7 @@ Page({
     });
   },
 
-  // 跳转小程序
-  toMiniProgram(e) {
-    let appId = e.currentTarget.dataset.appId;
-    wx.navigateToMiniProgram({
-      appId,
-    });
-  },
-
-  // 获取天气
+// 获取天气
   getWeather() {
     var _this = this;
     wx.request({
