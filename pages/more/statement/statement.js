@@ -17,10 +17,6 @@ Page({
     statement: media.statement,
     zhixie: media.zhixie,
 
-    zhixie_kaifazhe: media.zhixie_kaifazhe,
-    zhixie_up: media.zhixie_up,
-    zhixie_honghui: media.zhixie_honghui,
-
     notes: media.notes,
   },
 });

@@ -114,3 +114,16 @@
   align-items: center;
   justify-content: space-between;
 }
+
+.tech-list {
+  margin-top: 10px;
+}
+
+.tech-item {
+  padding: 8px 12px;
+  margin: 6px 10px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  font-size: 28rpx;
+  color: #333;
+}
