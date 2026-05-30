@@ -1,7 +1,7 @@
 /* data/data.js */
 module.exports = {
   // 和风天气API
-  weatherKey: 'b1dd16e6c51f4d98906fb6fead2af8b2',
+  weatherKey: 'eb110225d7dd42e195e72f45731a4838',
 
   // 小程序名称
   miniprogram_name: '嘉应校园导航',

@@ -39,6 +39,7 @@ laba: media.laba,
     school_location:
       parseFloat(map.longitude).toFixed(2) + ',' + parseFloat(map.latitude).toFixed(2),
 
+    now: { icon: '100', temp: '--' },
     carousel: [],
 
     indicatorDots: true, // 是否显示面板指示点
@@ -127,15 +128,15 @@ laba: media.laba,
   getWeather() {
     var _this = this;
     wx.request({
-      url: 'https://devapi.qweather.com/v7/weather/now',
+      url: 'https://ny6mtghphe.re.qweatherapi.com/v7/weather/now',
       data: {
         location: this.data.school_location,
         key: this.data.APIKEY,
       },
       success(res) {
-        _this.setData({
-          now: res.data.now,
-        });
+        let now = res.data.now;
+        if (!now.icon) now.icon = '100'; // 默认晴天图标
+        _this.setData({ now });
       },
     });
   },
