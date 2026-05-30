@@ -64,14 +64,13 @@
         </image>
       </button>
 
-      <!-- <button class="menu_row open_type" style="width: 95%;" open-type="share"> -->
-      <!-- <button class="menu_row open_type" style="width: 95%;" bindtap="share">
+      <button class="menu_row open_type" style="width: 95%;" bindtap="share">
         <image style="height:60rpx;width:60rpx;margin-left:30rpx;" src="{{share}}">
         </image>
         <view style="margin-left:10rpx;">推荐给好友</view>
         <image style="height:40rpx;width:40rpx;margin-left:auto;margin-right:10px" src="{{green_arrow}}">
         </image>
-      </button> -->
+      </button>
 
       <view bindtap="toadmin" class="menu_row">
         <image style="height: 60rpx; width: 60rpx; margin-left: 30rpx" src="{{admin}}"> </image>
