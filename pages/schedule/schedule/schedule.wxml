@@ -19,6 +19,7 @@
       <view class="tool-btn" bindtap="onImportTap">📥 导入</view>
       <view class="tool-btn" bindtap="onReminderSettingsTap">⏰ 提醒</view>
       <view class="tool-btn" bindtap="onAddCourse">➕ 添加</view>
+      <view class="tool-btn test" bindtap="onTestReminder">🔔 测试</view>
     </view>
   </view>
 

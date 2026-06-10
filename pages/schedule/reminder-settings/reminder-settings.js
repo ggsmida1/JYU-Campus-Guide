@@ -34,7 +34,9 @@ Page({
         const settings = { ...this.data.settings, ...res.result.data };
         this.setData({ settings, loading: false });
       } else {
+        // 无记录时自动创建默认设置
         this.setData({ loading: false });
+        this.saveSettings({ reminderEnabled: true, defaultAdvance: 15 });
       }
     }).catch(() => {
       this.setData({ loading: false });
