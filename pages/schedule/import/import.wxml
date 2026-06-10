@@ -1,0 +1,111 @@
+<!--pages/schedule/import.wxml-->
+<view class="import-page">
+  <!-- 步骤 1：选择文件 -->
+  <view class="card">
+    <view class="card-title">📂 选择课表文件</view>
+
+    <!-- 格式选择标签 -->
+    <view class="format-tabs">
+      <view class="format-tab {{fileType === 'excel' ? 'active' : ''}}" bindtap="onChooseFile">
+        <text class="format-icon">📊</text>
+        <text class="format-name">Excel</text>
+        <text class="format-ext">.xlsx / .csv</text>
+      </view>
+      <view class="format-tab {{fileType === 'pdf' ? 'active' : ''}}" bindtap="onChooseFile">
+        <text class="format-icon">📄</text>
+        <text class="format-name">PDF</text>
+        <text class="format-ext">.pdf</text>
+      </view>
+    </view>
+
+    <view class="file-area" bindtap="onChooseFile">
+      <block wx:if="{{filePath}}">
+        <text class="file-icon">{{fileType === 'pdf' ? '📄' : '📊'}}</text>
+        <text class="file-name">{{fileName}}</text>
+        <text class="file-repick">点击更换</text>
+      </block>
+      <block wx:else>
+        <text class="file-placeholder">📁 点击选择文件</text>
+        <text class="file-hint">支持 .xlsx .xls .csv .pdf</text>
+      </block>
+    </view>
+  </view>
+
+  <!-- 步骤 2：解析 -->
+  <view class="card" wx:if="{{filePath}}">
+    <view class="card-title">🔍 开始解析</view>
+    <view class="parse-btns">
+      <button
+        class="parse-btn"
+        bindtap="onParseExcel"
+        loading="{{parsing}}"
+        disabled="{{!filePath || parsing}}"
+        wx:if="{{fileType === 'excel'}}"
+      >解析 Excel</button>
+      <button
+        class="parse-btn"
+        bindtap="onParsePDF"
+        loading="{{parsing}}"
+        disabled="{{!filePath || parsing}}"
+        wx:if="{{fileType === 'pdf'}}"
+      >解析 PDF</button>
+    </view>
+    <view class="tip" wx:if="{{fileType === 'pdf'}}">
+      ⚠ PDF 解析依赖字体兼容性，如失败请尝试导出为 Excel 再导入
+    </view>
+  </view>
+
+  <!-- 步骤 3：预览结果 -->
+  <view class="card" wx:if="{{parseResult}}">
+    <view class="card-title">📋 解析结果</view>
+    <view class="result-summary">
+      <text>{{semesterLabel || semester || '未知学期'}}</text>
+      <text class="course-count">{{courses.length}} 门课程</text>
+    </view>
+    <scroll-view scroll-y class="course-preview">
+      <view class="preview-item" wx:for="{{courses}}" wx:key="index">
+        <view class="preview-left">
+          <text class="preview-name">{{item.name}}</text>
+          <text class="preview-detail">{{item.teacher}} · {{item.location}} · {{item.startSlot}}-{{item.endSlot}}节</text>
+        </view>
+        <view class="preview-right">
+          <picker
+            range="{{weekdayNames}}"
+            value="{{item.weekday - 1}}"
+            data-index="{{index}}"
+            bindchange="onWeekdayChange"
+          >
+            <view class="weekday-picker {{item.weekday !== item._originalWeekday ? 'changed' : ''}}">
+              周{{item.weekday}} {{item.weekday !== item._originalWeekday ? '✎' : '▾'}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 步骤 4：导入 -->
+  <view class="card" wx:if="{{parseResult && courses.length > 0 && !importDone}}">
+    <view class="card-title">💾 导入到课表</view>
+    <view class="mode-selector">
+      <view class="mode-item {{importMode === 'replace' ? 'active' : ''}}" data-mode="replace" bindtap="onModeSelect">
+        <text class="mode-title">覆盖导入</text>
+        <text class="mode-desc">替换本学期旧课程</text>
+      </view>
+      <view class="mode-item {{importMode === 'append' ? 'active' : ''}}" data-mode="append" bindtap="onModeSelect">
+        <text class="mode-title">追加导入</text>
+        <text class="mode-desc">保留旧课程，追加</text>
+      </view>
+    </view>
+    <button class="import-btn" bindtap="onConfirmImport" loading="{{importing}}">
+      {{importing ? '导入中...' : '确认导入'}}
+    </button>
+  </view>
+
+  <!-- 完成 -->
+  <view class="card done-card" wx:if="{{importDone}}">
+    <view class="done-icon">✅</view>
+    <view class="done-text">成功导入 {{importCount}} 门课程</view>
+    <button class="back-btn" bindtap="onBackToSchedule">返回课表</button>
+  </view>
+</view>

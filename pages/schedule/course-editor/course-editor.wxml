@@ -1,0 +1,116 @@
+<!--pages/schedule/course-editor.wxml-->
+<view class="editor-page">
+  <view class="form-section">
+    <view class="section-title">基本信息</view>
+
+    <view class="form-item">
+      <text class="label required">课程名称</text>
+      <input class="input" placeholder="例如：高等数学" value="{{form.name}}" data-field="name" bindinput="onFieldChange" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">课程类型</text>
+      <picker range="{{typeOptions}}" value="{{typeIndex}}" data-field="type" bindchange="onPickerChange">
+        <view class="picker">{{form.type || '请选择'}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item">
+      <text class="label">授课教师</text>
+      <input class="input" placeholder="教师姓名" value="{{form.teacher}}" data-field="teacher" bindinput="onFieldChange" />
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">时间安排</view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="label">星期</text>
+        <picker range="{{weekdayOptions}}" value="{{form.weekday - 1}}" data-field="weekday" bindchange="onPickerChange">
+          <view class="picker">{{weekdayOptions[form.weekday - 1]}}</view>
+        </picker>
+      </view>
+      <view class="form-item half">
+        <text class="label">起始节次</text>
+        <picker range="{{slotOptions}}" value="{{form.startSlot - 1}}" data-field="startSlot" bindchange="onPickerChange">
+          <view class="picker">第 {{form.startSlot}} 节</view>
+        </picker>
+      </view>
+      <view class="form-item half">
+        <text class="label">结束节次</text>
+        <picker range="{{slotOptions}}" value="{{form.endSlot - 1}}" data-field="endSlot" bindchange="onPickerChange">
+          <view class="picker">第 {{form.endSlot}} 节</view>
+        </picker>
+      </view>
+    </view>
+
+    <view class="form-row">
+      <view class="form-item half">
+        <text class="label">起始周</text>
+        <input class="input" type="number" value="{{form.startWeek}}" data-field="startWeek" bindinput="onNumberChange" />
+      </view>
+      <view class="form-item half">
+        <text class="label">结束周</text>
+        <input class="input" type="number" value="{{form.endWeek}}" data-field="endWeek" bindinput="onNumberChange" />
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">周次模式</text>
+      <picker range="{{weekModeOptions}}" range-key="label" data-field="weekMode" bindchange="onPickerChange">
+        <view class="picker">{{weekModeLabel}}</view>
+      </picker>
+    </view>
+
+    <view class="form-item" wx:if="{{form.weekMode === 'specific'}}">
+      <text class="label">指定周次</text>
+      <input class="input" placeholder="例如：1,3,5,7" value="{{form.specificWeeks.join(',')}}" bindinput="onSpecificWeeksInput" />
+      <text class="hint">用逗号分隔，例如：1,3,5,7</text>
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">地点信息</view>
+
+    <view class="form-item">
+      <text class="label">校区</text>
+      <input class="input" placeholder="例如：江北校区" value="{{form.campus}}" data-field="campus" bindinput="onFieldChange" />
+    </view>
+
+    <view class="form-item">
+      <text class="label">上课地点</text>
+      <input class="input" placeholder="例如：锡科404" value="{{form.location}}" data-field="location" bindinput="onFieldChange" />
+    </view>
+  </view>
+
+  <view class="form-section">
+    <view class="section-title">展示颜色</view>
+    <view class="color-list">
+      <view
+        class="color-item {{form.color && form.color.name === item.name ? 'selected' : ''}}"
+        wx:for="{{colors}}"
+        wx:key="name"
+        data-index="{{index}}"
+        bindtap="onColorSelect"
+        style="background:{{item.bg}}; border-color:{{item.border}};"
+      >
+        <text style="color:{{item.text}}">{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 冲突提示 -->
+  <view class="conflict-warning" wx:if="{{conflictInfo}}">
+    <text>⚠ 时间冲突：</text>
+    <text wx:for="{{conflictInfo}}" wx:key="_id">{{item.name}} </text>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="btn-area">
+    <button class="save-btn" bindtap="onSave" loading="{{saving}}">
+      {{mode === 'edit' ? '保存修改' : '添加课程'}}
+    </button>
+    <button class="delete-btn" wx:if="{{mode === 'edit'}}" bindtap="onDelete">删除课程</button>
+  </view>
+</view>

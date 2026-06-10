@@ -171,6 +171,13 @@ laba: media.laba,
     });
   },
 
+  // 跳转课表页
+  toSchedule() {
+    wx.navigateTo({
+      url: '/pages/schedule/schedule/schedule',
+    });
+  },
+
   // 友情链接
   link() {
     this.setData({

@@ -1,0 +1,10 @@
+{
+  "name": "parse_schedule_excel",
+  "version": "1.0.0",
+  "description": "解析课表 Excel/CSV",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*",
+    "xlsx": "^0.18.5"
+  }
+}

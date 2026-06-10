@@ -1,0 +1,9 @@
+{
+  "name": "upsert_reminder",
+  "version": "1.0.0",
+  "description": "新增或更新提醒",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

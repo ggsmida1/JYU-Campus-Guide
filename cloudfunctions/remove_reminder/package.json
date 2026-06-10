@@ -1,0 +1,9 @@
+{
+  "name": "remove_reminder",
+  "version": "1.0.0",
+  "description": "删除提醒",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

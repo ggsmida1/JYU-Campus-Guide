@@ -27,7 +27,12 @@
     "pages/manage/schoolguide-list/schoolguide-list",
     "pages/manage/schoolguide-list/schoolguide/schoolguide",
     "pages/manage/admin-list/admin-list",
-    "pages/manage/admin-list/admin/admin"
+    "pages/manage/admin-list/admin/admin",
+    "pages/schedule/schedule/schedule",
+    "pages/schedule/course-editor/course-editor",
+    "pages/schedule/import/import",
+    "pages/schedule/reminder-settings/reminder-settings",
+    "pages/schedule/course-reminder/course-reminder"
   ],
   "window": {
     "backgroundTextStyle": "light",

@@ -1,0 +1,9 @@
+{
+  "name": "get_user_settings",
+  "version": "1.0.0",
+  "description": "获取用户设置",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

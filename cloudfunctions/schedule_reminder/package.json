@@ -1,0 +1,9 @@
+{
+  "name": "schedule_reminder",
+  "version": "1.0.0",
+  "description": "定时提醒触发器",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

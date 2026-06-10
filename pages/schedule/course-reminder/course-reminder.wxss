@@ -1,0 +1,97 @@
+/* pages/schedule/course-reminder.wxss */
+.reminder-page {
+  padding: 20rpx;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+.course-header {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 30rpx 24rpx;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+.course-name {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #333;
+  display: block;
+}
+.course-sub {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+.section {
+  background: #fff;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+.section-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 16rpx;
+}
+.reminder-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f5f5;
+}
+.reminder-info {
+  flex: 1;
+}
+.reminder-type {
+  font-size: 28rpx;
+  color: #333;
+  display: block;
+}
+.reminder-advance {
+  font-size: 22rpx;
+  color: #999;
+}
+.reminder-actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.action-text {
+  font-size: 24rpx;
+  color: #1976D2;
+}
+.action-text.delete {
+  color: #e74c3c;
+}
+.add-btn {
+  background: #E3F2FD;
+  color: #1976D2;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+.subscribe-btn {
+  background: #4CAF50;
+  color: #fff;
+  border-radius: 40rpx;
+  font-size: 28rpx;
+}
+.hint {
+  font-size: 22rpx;
+  color: #ccc;
+  text-align: center;
+  margin-top: 12rpx;
+}
+.empty {
+  text-align: center;
+  padding: 40rpx;
+  color: #999;
+  font-size: 26rpx;
+}
+.empty-hint {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #ccc;
+}

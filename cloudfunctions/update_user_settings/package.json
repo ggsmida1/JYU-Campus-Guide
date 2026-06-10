@@ -1,0 +1,9 @@
+{
+  "name": "update_user_settings",
+  "version": "1.0.0",
+  "description": "更新用户设置",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

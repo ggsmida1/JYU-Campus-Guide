@@ -1,0 +1,95 @@
+<!--pages/schedule/schedule.wxml-->
+<view class="schedule-page">
+  <!-- 学期选择器 -->
+  <view class="header">
+    <picker
+      range="{{semesterOptions}}"
+      range-key="label"
+      value="{{selectedSemesterIndex}}"
+      bindchange="onSemesterChange"
+    >
+      <view class="semester-picker">
+        <text class="semester-label">{{semesterLabel}}</text>
+        <text class="arrow">▼</text>
+      </view>
+    </picker>
+
+    <!-- 工具栏 -->
+    <view class="toolbar">
+      <view class="tool-btn" bindtap="onImportTap">📥 导入</view>
+      <view class="tool-btn" bindtap="onReminderSettingsTap">⏰ 提醒</view>
+      <view class="tool-btn" bindtap="onAddCourse">➕ 添加</view>
+    </view>
+  </view>
+
+  <!-- 周次切换 -->
+  <view class="week-switcher">
+    <view class="week-btn {{displayWeek <= 1 ? 'disabled' : ''}}" bindtap="prevWeek">〈</view>
+    <view class="week-info" bindtap="goToCurrentWeek">
+      <text class="week-num">第 {{displayWeek}} 周</text>
+      <text class="week-hint" wx:if="{{displayWeek !== currentWeek}}">（当前第{{currentWeek}}周）</text>
+    </view>
+    <view class="week-btn {{displayWeek >= totalWeeks ? 'disabled' : ''}}" bindtap="nextWeek">〉</view>
+  </view>
+
+  <!-- 周视图课表 -->
+  <view class="schedule-grid" wx:if="{{!loading}}">
+    <!-- 空状态 -->
+    <view class="empty-state" wx:if="{{!hasCourses}}">
+      <view class="empty-icon">📋</view>
+      <view class="empty-text">还没有课程数据</view>
+      <view class="empty-actions">
+        <button class="action-btn primary" bindtap="onImportTap">导入课表 PDF</button>
+        <button class="action-btn" bindtap="onAddCourse">手动添加课程</button>
+      </view>
+    </view>
+
+    <!-- 课表网格 -->
+    <block wx:else>
+      <!-- 表头：星期 -->
+      <view class="grid-header">
+        <view class="corner-cell">节次</view>
+        <view class="weekday-cell" wx:for="{{weekdays}}" wx:key="*this">{{item}}</view>
+      </view>
+
+      <!-- 课表主体 -->
+      <scroll-view scroll-y class="grid-body">
+        <view class="grid-row" wx:for="{{periodLabels}}" wx:for-index="slotIdx" wx:key="*this" wx:if="{{slotIdx > 0}}">
+          <view class="period-cell">
+            <text class="period-num">{{item}}</text>
+            <text class="period-time">{{periodTimes[slotIdx]}}</text>
+          </view>
+
+          <view
+            class="course-cell"
+            wx:for="{{weekdays}}"
+            wx:for-item="day"
+            wx:for-index="dayIdx"
+            wx:key="day"
+          >
+            <block wx:for="{{weekCourses}}" wx:for-item="course" wx:for-index="courseIdx" wx:key="_id">
+              <view
+                wx:if="{{course.weekday === dayIdx + 1 && course.startSlot === slotIdx}}"
+                class="course-card"
+                style="{{course.cardStyle}}"
+                data-course="{{course}}"
+                bindtap="onCourseTap"
+                bindlongpress="onCourseLongPress"
+              >
+                <view class="course-name">{{course.name}}</view>
+                <view class="course-location" wx:if="{{course.location}}">📍{{course.location}}</view>
+                <view class="course-teacher" wx:if="{{course.teacher}}">{{course.teacher}}</view>
+                <view class="course-weeks">{{course.startWeek}}-{{course.endWeek}}周<text wx:if="{{course.weekMode === 'odd'}}">(单)</text><text wx:if="{{course.weekMode === 'even'}}">(双)</text></view>
+              </view>
+            </block>
+          </view>
+        </view>
+      </scroll-view>
+    </block>
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+</view>
