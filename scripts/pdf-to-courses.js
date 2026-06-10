@@ -1,11 +1,7 @@
 /**
- * 课表 PDF 解析器 v8 — 全局 x 频率峰值定位列中心
- * 基于用户核心想法：列宽一致，跨时段统计频率
+ * 课表 PDF 解析器 - 基于表格线网格 + 课程边界正则分割
  */
-const fs = require('fs');
-const path = require('path');
-const PDFParser = require('pdf2json');
-
+const fs = require('fs'); const path = require('path'); const PDFParser = require('pdf2json');
 const pdfPath = process.argv[2];
 if (!pdfPath) { console.log('用法: node scripts/pdf-to-courses.js <课表PDF>'); process.exit(1); }
 
@@ -13,171 +9,141 @@ new PDFParser().on('pdfParser_dataReady', data => {
   const blocks = [];
   for (const pg of data.Pages) {
     if (!pg.Texts) continue;
-    for (const t of pg.Texts) {
-      try { blocks.push({ x:t.x, y:t.y, text: decodeURIComponent(t.R[0].T) }); } catch(e) {}
-    }
+    for (const t of pg.Texts) { try { blocks.push({ x:t.x, y:t.y, text: decodeURIComponent(t.R[0].T) }); } catch(e) {} }
   }
+
+  // ==== 1. 行/列边界 ====
+  const hLineYCounts = {};
+  for (const pg of data.Pages) {
+    if (pg.HLines) pg.HLines.forEach(l => { const yk = l.y.toFixed(1); hLineYCounts[yk] = (hLineYCounts[yk] || 0) + 1; });
+  }
+  const rowBounds = Object.entries(hLineYCounts).filter(([,c]) => c >= 4).map(([y]) => parseFloat(y)).sort((a,b) => a - b);
+
+  const allVX = [];
+  for (const pg of data.Pages) {
+    if (pg.VLines) pg.VLines.forEach(l => { if (l.l > 1.5) allVX.push(l.x); });
+  }
+  allVX.sort((a,b) => a - b);
+  const colBounds = []; allVX.forEach(x => { if (colBounds.length === 0 || x - colBounds[colBounds.length-1] > 1.0) colBounds.push(x); });
+
+  // 表头→星期几
+  const headerColMap = {};
+  const dayNames = ['星期一','星期二','星期三','星期四','星期五','星期六','星期日'];
+  blocks.filter(b => dayNames.some(d => b.text.includes(d))).forEach(b => {
+    const idx = dayNames.findIndex(d => b.text.includes(d));
+    if (idx >= 0) { for (let c = 0; c < colBounds.length - 1; c++) { if (b.x >= colBounds[c]-0.5 && b.x < colBounds[c+1]+0.5) { headerColMap[idx+1] = c; break; } } }
+  });
+  const colToWeekday = {}; for (const [w, c] of Object.entries(headerColMap)) colToWeekday[c] = parseInt(w);
+  console.log('列映射:', JSON.stringify(headerColMap));
 
   const raw = blocks.map(b => b.text).join('');
-  let semester = '';
-  const sm = raw.match(/(\d{4})-(\d{4})学年[第](\d)学期/);
-  if (sm) semester = sm[1] + '-' + sm[2] + '-' + sm[3];
   const isLabeled = /校区[：:]|场地[：:]/.test(raw);
+  let semester = ''; const sm = raw.match(/(\d{4})-(\d{4})学年[第](\d)学期/);
+  if (sm) semester = sm[1] + '-' + sm[2] + '-' + sm[3];
   console.log('学期:', semester, '|', isLabeled ? '标签' : '无标签');
 
-  const typeMarks = '★○●◇◆';
+  // ==== 2. 文本块按列-行分配到网格，每列聚合全部文本 ====
+  const colTexts = {}; // {colIdx: fullText}
+
+  for (const b of blocks) {
+    if (b.y < 3.8 || b.x < 1 || b.text.trim().length < 1) continue;
+    if (/星期|节次|时间段|上午|下午|晚上/.test(b.text)) continue;
+    if (/^\d{1,2}$/.test(b.text.trim())) continue;
+
+    let col = -1;
+    for (let c = 0; c < colBounds.length - 1; c++) {
+      if (b.x >= colBounds[c] && b.x < colBounds[c + 1]) { col = c; break; }
+    }
+    if (col < 2) continue; // 跳过时间段和节次列
+
+    if (!colTexts[col]) colTexts[col] = '';
+    colTexts[col] += b.text;
+  }
+
+  // ==== 3. 每列内按课程边界正则分割 ====
   const typeMap = { '★': '讲课', '○': '实验', '●': '实践', '◇': '上机', '◆': '讨论' };
+  const courses = [];
 
-  // ====== 1. 表头保证列数 + 频率精调列中心 ======
-  const headerXs = [...new Set(
-    blocks.filter(b => /星期一|星期二|星期三|星期四|星期五|星期六|星期日/.test(b.text)).map(b => Math.round(b.x))
-  )].sort((a, b) => a - b);
+  for (const [colStr, fullText] of Object.entries(colTexts)) {
+    const col = parseInt(colStr, 10);
+    const weekday = colToWeekday[col];
+    if (!weekday) continue;
 
-  // 频率桶（精度 0.5）
-  const bucketMap = new Map();
-  blocks
-    .filter(b => b.y > 4 && b.x > 4 && b.text.trim().length > 1 && !/^\d{1,2}$/.test(b.text.trim()) && !/星期/.test(b.text))
-    .forEach(b => {
-      const key = Math.round(b.x * 2);
-      if (!bucketMap.has(key)) bucketMap.set(key, { x: key / 2, c: 0 });
-      bucketMap.get(key).c++;
-    });
+    const clean = fullText.replace(/\s+/g, '');
 
-  // 平均列宽
-  const avgSpacing = headerXs.length > 1 ? (headerXs[headerXs.length - 1] - headerXs[0]) / (headerXs.length - 1) : 7;
+    // 找所有课程起始边界
+    const starts = [];
 
-  // 每个表头列 ±0.6倍列宽范围内找频率最高的桶精调位置
-  const colCenters = headerXs.map(hx => {
-    let best = hx, bestC = 0;
-    bucketMap.forEach(b => {
-      if (Math.abs(b.x - hx) <= avgSpacing * 0.6 && b.c > bestC) { bestC = b.c; best = b.x; }
-    });
-    return best;
-  });
-
-  console.log(`表头: ${headerXs.join(',')} | 列宽: ${avgSpacing.toFixed(1)}`);
-  console.log(`列中心: ${colCenters.map((x,i) => '周'+(i+1)+'@'+x.toFixed(1)).join(' ')}`);
-
-  // ====== 2. 锚点法提取课程 ======
-  const slotPositions = [];
-  const slotRe = /\((\d+)-(\d+)节\)/g;
-  let m;
-  while ((m = slotRe.exec(raw)) !== null) {
-    slotPositions.push({ pos: m.index, startSlot: parseInt(m[1],10), endSlot: parseInt(m[2],10) });
-  }
-
-  const markPositions = [];
-  for (let i = 0; i < raw.length; i++) {
-    if (typeMarks.includes(raw[i])) markPositions.push(i);
-  }
-
-  const rawCourses = [];
-  let claimed = 0;
-
-  for (const slot of slotPositions) {
-    let bestIdx = -1;
-    for (let t = markPositions.length - 1; t >= 0; t--) {
-      if (markPositions[t] < slot.pos && t >= claimed && slot.pos - markPositions[t] < 150) {
-        bestIdx = t; break;
-      }
-    }
-    if (bestIdx < 0) continue;
-
-    const mp = markPositions[bestIdx];
-    const typeMark = raw[mp];
-
-    let ns = mp - 1;
-    while (ns >= 0) {
-      const ch = raw[ns];
-      if (typeMarks.includes(ch) || ch === '(' || ch === ')') break;
-      if (ch === '/' && mp - ns > 20) break;
-      if (/\d/.test(ch) && mp - ns > 1) break;
-      ns--;
-    }
-    ns++;
-    let name = raw.substring(ns, mp).trim().replace(/[一二三四五六日]/g, '').trim();
-    if (name.length < 2 || /课表|学号|打印时间|时间段|节次|星期|上午|下午|晚上|体育课|艺术课|课内实践|教学质量/.test(name)) continue;
-
-    claimed = bestIdx + 1;
-
-    let fe = slot.pos + 300;
-    const nextSlot = slotPositions.find(s => s.pos > slot.pos);
-    if (nextSlot) fe = Math.min(fe, nextSlot.pos);
-    const ci = raw.indexOf('学分', slot.pos);
-    if (ci > 0 && ci < fe) fe = ci + 30;
-
-    const clean = (name + typeMark + raw.substring(slot.pos, Math.min(fe, raw.length))).replace(/\s+/g, '');
-    const course = parseFields(clean, name, typeMap[typeMark], slot.startSlot, slot.endSlot, semester, isLabeled);
-    if (!course) continue;
-
-    // ====== 3. 格式决定定位策略 → 最近列中心 → weekday ======
-    let foundBlock = null;
-
-    if (isLabeled) {
-      // 标签格式：课程名+类型标记块定位准确
-      const nameWithMark = name + typeMark;
-      foundBlock = blocks.find(b => b.y > 4 && b.text.includes(nameWithMark));
-    } else {
-      // 无标签格式：字段块在单元格中（节次+教师同时出现唯一确定一门课）
-      const slotStr = `(${slot.startSlot}-${slot.endSlot}节)`;
-      if (course.teacher) {
-        foundBlock = blocks.find(b => b.y > 4 && b.text.includes(slotStr) && b.text.includes(course.teacher));
-      }
-      if (!foundBlock && course.location) {
-        foundBlock = blocks.find(b => b.y > 4 && b.text.includes(slotStr) && b.text.includes(course.location));
-      }
-      if (!foundBlock) {
-        foundBlock = blocks.find(b => b.y > 4 && b.text.includes(slotStr));
-      }
-      if (!foundBlock) {
-        foundBlock = blocks.find(b => b.y > 4 && b.text.includes(name + typeMark));
-      }
+    // 第一轮：有类型标记的课程 (课程名★/○/●/◇/◆)
+    const bRe = /([^★○●◇◆\/:]+)([★○●◇◆])\((\d+)-(\d+)节\)/g;
+    let m;
+    while ((m = bRe.exec(clean)) !== null) {
+      let cname = m[1].trim().replace(/^[\d.]+/, '').trim();
+      if (cname.length < 2) continue;
+      starts.push({ pos: m.index, name: cname, mk: m[2], startSlot: parseInt(m[3],10), endSlot: parseInt(m[4],10) });
     }
 
-    const courseX = foundBlock ? foundBlock.x : 0;
+    // 第二轮：无类型标记的课程（如体育-排舞 2）
+    const uRe = /([^\(★○●◇◆\/]{2,35})\((\d+)-(\d+)节\)/g;
+    while ((m = uRe.exec(clean)) !== null) {
+      let cname = m[1].trim().replace(/^[\d.]+/, '').trim();
+      const alreadyCovered = starts.some(s => Math.abs(s.pos - m.index) < 10);
+      if (alreadyCovered || cname.length < 2) continue;
+      if (/学分|学时|安排|备注|组成|方式/.test(cname)) continue;
+      starts.push({ pos: m.index, name: cname, mk: '', startSlot: parseInt(m[2],10), endSlot: parseInt(m[3],10) });
+    }
 
-    // 找最近的全局列中心
-    let bestCol = 0, bestDist = 999;
-    colCenters.forEach((cx, i) => {
-      const d = Math.abs(courseX - cx);
-      if (d < bestDist) { bestDist = d; bestCol = i; }
-    });
-    course.weekday = bestCol + 1;
+    // 按位置排序
+    starts.sort((a, b) => a.pos - b.pos);
 
-    // 去重
-    const dup = rawCourses.find(e =>
-      e.name === course.name && e.weekday === course.weekday &&
-      e.startSlot === course.startSlot && e.type === course.type &&
-      e.startWeek === course.startWeek && e.weekMode === course.weekMode
-    );
-    if (!dup) rawCourses.push(course);
+    if (starts.length === 0) continue;
+
+    // 切分：从每个start到下一个start（或末尾）
+    for (let i = 0; i < starts.length; i++) {
+      const s = starts[i];
+      const end = i + 1 < starts.length ? starts[i + 1].pos : clean.length;
+      const cellText = clean.substring(s.pos, end);
+
+      const course = parseCourse(cellText, s.name, typeMap[s.mk] || '', s.startSlot, s.endSlot, weekday, semester, isLabeled);
+      if (!course) continue;
+
+      const dup = courses.find(c =>
+        c.name === course.name && c.weekday === course.weekday &&
+        c.startSlot === course.startSlot && c.type === course.type &&
+        c.startWeek === course.startWeek
+      );
+      if (!dup) courses.push(course);
+    }
   }
 
-  // 输出
-  console.log(`\n=== 结果 (${rawCourses.length}门) ===`);
-  rawCourses.forEach((c, i) => {
+  console.log('\n=== ' + courses.length + '门 ===');
+  courses.forEach((c, i) => {
     const wm = c.weekMode === 'odd' ? '(单)' : c.weekMode === 'even' ? '(双)' :
-      c.weekMode === 'specific' ? `(${c.specificWeeks.join(',')}周)` : '';
-    console.log(`${i + 1}. [${c.type}] ${c.name.padEnd(24)} 周${c.weekday} ${c.startSlot}-${c.endSlot}节 ${c.startWeek}-${c.endWeek}周${wm} | ${c.location} | ${c.teacher}`);
+      c.weekMode === 'specific' ? '(' + c.specificWeeks.join(',') + '周)' : '';
+    console.log((i + 1) + '. [' + c.type + '] ' + c.name.padEnd(24) +
+      ' 周' + c.weekday + ' ' + c.startSlot + '-' + c.endSlot + '节 ' +
+      c.startWeek + '-' + c.endWeek + '周' + wm + ' | ' + (c.location||'') + ' | ' + (c.teacher||''));
   });
-
   fs.writeFileSync(path.join(__dirname, '..', 'courses_output.json'),
-    JSON.stringify({ semester, total: rawCourses.length, courses: rawCourses }, null, 2), 'utf-8');
-  console.log('\n已保存 courses_output.json');
+    JSON.stringify({ semester, total: courses.length, courses }, null, 2), 'utf-8');
 }).on('pdfParser_dataError', e => console.error(e)).loadPDF(pdfPath);
 
-function parseFields(clean, name, type, startSlot, endSlot, semester, isLabeled) {
+// ============================================================
+function parseCourse(clean, name, type, startSlot, endSlot, weekday, semester, isLabeled) {
+  if (!name || clean.length < 10) return null;
+
   let sw = 1, ew = 20, wm = 'all', spec = [];
-  if (/周[（(]单[）)]/.test(clean)) { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1], 10); ew = parseInt(m[2], 10); wm = 'odd'; } }
-  else if (/周[（(]双[）)]/.test(clean)) { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1], 10); ew = parseInt(m[2], 10); wm = 'even'; } }
-  else if (/(\d+)周[,，](\d+)周/.test(clean)) { const weeks = clean.match(/(\d+)周/g).map(w => parseInt(w, 10)); spec = weeks; sw = Math.min(...weeks); ew = Math.max(...weeks); wm = 'specific'; }
-  else { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1], 10); ew = parseInt(m[2], 10); } }
+  if (/周[（(]单[）)]/.test(clean)) { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1],10); ew = parseInt(m[2],10); wm = 'odd'; } }
+  else if (/周[（(]双[）)]/.test(clean)) { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1],10); ew = parseInt(m[2],10); wm = 'even'; } }
+  else if (/(\d+)周[,，](\d+)周/.test(clean)) { const weeks = clean.match(/(\d+)周/g).map(w=>parseInt(w,10)); spec=weeks; sw=Math.min(...weeks); ew=Math.max(...weeks); wm='specific'; }
+  else { const m = clean.match(/(\d+)-(\d+)周/); if (m) { sw = parseInt(m[1],10); ew = parseInt(m[2],10); } }
 
   let teacher = '', location = '';
   if (isLabeled) { teacher = ex(clean, '教师'); location = ex(clean, '场地'); }
-  else { const aw = clean.replace(/.+?周\//, ''); const parts = aw.split('/'); if (parts.length >= 6) { location = parts[0] || ''; teacher = parts[1] || ''; } }
+  else { const aw = clean.replace(/.+?周\//, ''); const parts = aw.split('/'); if (parts.length >= 6) { location = parts[0]||''; teacher = parts[1]||''; } }
   if (/^\d/.test(teacher) || teacher === '无' || teacher === '未安排') teacher = '';
   if (location === '未排地点') location = '';
-  return { name, type, weekday: 0, startSlot, endSlot, startWeek: sw, endWeek: ew, weekMode: wm, specificWeeks: spec, teacher, location, semester };
+
+  return { name, type, weekday, startSlot, endSlot, startWeek:sw, endWeek:ew, weekMode:wm, specificWeeks:spec, teacher, location, semester };
 }
 function ex(t, k) { const m = t.match(new RegExp(k + '[：:]([^/]+)')); return m ? m[1].trim() : ''; }

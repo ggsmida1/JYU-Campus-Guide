@@ -17,17 +17,21 @@ function getCurrentWeek(date, semesterStart) {
   const target = date ? new Date(date) : new Date();
   const start = new Date(semesterStart);
 
-  // 去掉时分秒，只比较日期
+  // 去掉时分秒
   const targetDate = new Date(target.getFullYear(), target.getMonth(), target.getDate());
   const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
 
-  const diffMs = targetDate - startDate;
+  // 学期第一周从起始日所在周的周一开始
+  const startDay = startDate.getDay(); // 0=周日
+  const daysToMonday = startDay === 0 ? -6 : -(startDay - 1); // 往前推到周一
+  const effectiveStart = new Date(startDate);
+  effectiveStart.setDate(startDate.getDate() + daysToMonday);
+
+  const diffMs = targetDate - effectiveStart;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return 0;
-  // ceil 方案：开学第1天=第1周，第7天仍在第1周，第8天=第2周
-  // 例如 2/24 开学 → 2/24~3/2=第1周, 3/3=第2周, ..., 6/9=第15周
-  return Math.max(1, Math.ceil(diffDays / 7));
+  return Math.floor(diffDays / 7) + 1;
 }
 
 /**

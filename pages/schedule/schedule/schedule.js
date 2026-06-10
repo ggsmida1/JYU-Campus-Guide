@@ -51,10 +51,28 @@ Page({
   },
 
   onShow() {
-    // 每次显示页面时刷新（可能从编辑页返回）
+    // 从其他页面返回时刷新
     if (this.data.semester) {
       this.loadCourses();
       this.loadSettings();
+    }
+    // 检查是否有从导入页传来的指定学期
+    const pages = getCurrentPages();
+    const currPage = pages[pages.length - 1];
+    if (currPage && currPage.options && currPage.options.semester) {
+      const importSemester = currPage.options.semester;
+      if (importSemester !== this.data.semester) {
+        this.ensureSemesterInOptions(importSemester);
+        const idx = this.data.semesterOptions.findIndex(o => o.id === importSemester);
+        const { label } = parseSemesterId(importSemester);
+        this.setData({
+          semester: importSemester,
+          semesterLabel: label,
+          selectedSemesterIndex: idx >= 0 ? idx : 0,
+        });
+        this.loadCourses(true);
+        this.loadSettings();
+      }
     }
   },
 
@@ -64,7 +82,6 @@ Page({
   initSemester() {
     const currentSemester = guessCurrentSemester();
     const { label } = parseSemesterId(currentSemester);
-    // 生成最近几个学期的选项
     const options = this.generateSemesterOptions();
     const idx = options.findIndex(o => o.id === currentSemester);
 
@@ -75,23 +92,36 @@ Page({
       selectedSemesterIndex: idx >= 0 ? idx : 0,
     });
 
-    // 加载用户设置（获取精确的学期起始日）
     this.loadSettings();
-    this.loadCourses();
+    this.loadCourses(true);
   },
 
   /**
-   * 生成学期选项（当前学期前后各 2 个）
+   * 生成学期选项（前后各 3 年）
    */
   generateSemesterOptions() {
     const now = new Date();
     const year = now.getFullYear();
     const options = [];
-    for (let y = year - 1; y <= year + 1; y++) {
-      options.push({ id: `${y}-${y + 1}-1`, label: `${y}-${y + 1} 第一学期` });
-      options.push({ id: `${y}-${y + 1}-2`, label: `${y}-${y + 1} 第二学期` });
+    for (let y = year - 3; y <= year + 1; y++) {
+      options.push({ id: y + '-' + (y + 1) + '-1', label: y + '-' + (y + 1) + ' 第一学期' });
+      options.push({ id: y + '-' + (y + 1) + '-2', label: y + '-' + (y + 1) + ' 第二学期' });
     }
     return options;
+  },
+
+  /**
+   * 确保导入的学期在选项列表中
+   */
+  ensureSemesterInOptions(semesterId) {
+    const options = [...this.data.semesterOptions];
+    if (!options.find(o => o.id === semesterId)) {
+      const { label } = parseSemesterId(semesterId);
+      options.push({ id: semesterId, label });
+      options.sort((a, b) => a.id.localeCompare(b.id));
+      const idx = options.findIndex(o => o.id === semesterId);
+      this.setData({ semesterOptions: options, selectedSemesterIndex: idx });
+    }
   },
 
   /**
@@ -135,12 +165,14 @@ Page({
   /**
    * 加载课程数据
    */
-  loadCourses() {
-    this.setData({ loading: true });
+  loadCourses(isRefresh) {
+    // 首次加载显示 loading，切换学期时保持旧数据显示避免闪烁
+    if (!isRefresh) this.setData({ loading: true });
 
+    const semester = this.data.semester;
     wx.cloud.callFunction({
       name: 'query_courses',
-      data: { semester: this.data.semester },
+      data: { semester },
     }).then((res) => {
       if (res.result && res.result.success) {
         const courses = res.result.data || [];
@@ -149,6 +181,8 @@ Page({
             c.color = assignColor(courses);
           }
         });
+
+        this.ensureSemesterInOptions(semester);
 
         this.setData({
           courses,
@@ -204,7 +238,7 @@ Page({
       semesterLabel: label,
       selectedSemesterIndex: idx,
     });
-    this.loadCourses();
+    this.loadCourses(true);
   },
 
   /**
@@ -289,7 +323,7 @@ Page({
           }).then((result) => {
             if (result.result && result.result.success) {
               wx.showToast({ title: '已删除', icon: 'success' });
-              this.loadCourses();
+              this.loadCourses(true);
             } else {
               wx.showToast({ title: '删除失败', icon: 'none' });
             }
@@ -323,6 +357,41 @@ Page({
   onReminderSettingsTap() {
     wx.navigateTo({
       url: '/pages/schedule/reminder-settings/reminder-settings',
+    });
+  },
+
+  /**
+   * 点击学期日期 → 快捷修改
+   */
+  onAdjustSemester() {
+    const that = this;
+    wx.showModal({
+      title: '修改学期开始日期',
+      editable: true,
+      placeholderText: '格式：2026-02-24',
+      content: that.data.semesterStart,
+      success: (res) => {
+        if (res.confirm && res.content) {
+          const d = res.content.trim();
+          if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+            wx.cloud.callFunction({
+              name: 'update_user_settings',
+              data: { semesterStart: d },
+            }).then(() => {
+              const currentWeek = getCurrentWeek(new Date(), d);
+              that.setData({
+                semesterStart: d,
+                currentWeek: Math.min(currentWeek, that.data.totalWeeks),
+                displayWeek: Math.min(currentWeek, that.data.totalWeeks),
+              });
+              that.filterWeekCourses();
+              wx.showToast({ title: '已更新为第' + currentWeek + '周', icon: 'success' });
+            });
+          } else {
+            wx.showToast({ title: '日期格式错误', icon: 'none' });
+          }
+        }
+      },
     });
   },
 

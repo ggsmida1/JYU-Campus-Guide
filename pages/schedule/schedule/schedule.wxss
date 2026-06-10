@@ -78,6 +78,12 @@
   color: #999;
   display: block;
 }
+.week-date-hint {
+  font-size: 20rpx;
+  color: #bbb;
+  display: block;
+  margin-top: 4rpx;
+}
 
 /* 课表网格 */
 .schedule-grid {

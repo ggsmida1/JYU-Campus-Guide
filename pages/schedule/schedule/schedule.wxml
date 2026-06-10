@@ -25,9 +25,10 @@
   <!-- 周次切换 -->
   <view class="week-switcher">
     <view class="week-btn {{displayWeek <= 1 ? 'disabled' : ''}}" bindtap="prevWeek">〈</view>
-    <view class="week-info" bindtap="goToCurrentWeek">
-      <text class="week-num">第 {{displayWeek}} 周</text>
-      <text class="week-hint" wx:if="{{displayWeek !== currentWeek}}">（当前第{{currentWeek}}周）</text>
+	    <view class="week-info">
+        <text class="week-num" bindtap="goToCurrentWeek">第 {{displayWeek}} 周</text>
+        <text class="week-hint" wx:if="{{displayWeek !== currentWeek}}">（当前第{{currentWeek}}周）</text>
+        <text class="week-date-hint" bindtap="onAdjustSemester">学期始: {{semesterStart}} ✎</text>
     </view>
     <view class="week-btn {{displayWeek >= totalWeeks ? 'disabled' : ''}}" bindtap="nextWeek">〉</view>
   </view>
