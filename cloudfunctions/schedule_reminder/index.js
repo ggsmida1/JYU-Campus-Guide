@@ -91,16 +91,39 @@ exports.main = async (event, context) => {
           if (!matched) continue;
 
           try {
-            await cloud.openapi.subscribeMessage.send({
+            // 楼名映射（课表缩写→数据库名称）
+            const BUILDING_MAP = {
+              '锡科':'锡昌科技大楼', '田师':'田家炳师范大楼', '活活艺术大楼':'活活艺术中心',
+              '活活':'活活艺术中心', '公':'公楼', '公B':'公楼', '公C':'公楼',
+              '李小平教育大楼':'李小平教育大楼', '百年纪念大楼':'百年纪念大楼',
+              '宪梓':'宪梓楼', '健美操':'健美操房',
+            };
+            const loc = course.location || '';
+            const raw = loc.replace(/[\dA-Z\-]+/g, '').trim();
+            // 先查映射表，没命中则用原始楼名
+            let building = BUILDING_MAP[raw] || raw;
+            // 前缀模糊匹配（如"活活艺术大楼A102"→"活活艺术中心"）
+            if (building === raw) {
+              for (const [k, v] of Object.entries(BUILDING_MAP)) {
+                if (v && (raw.includes(k) || k.includes(raw))) { building = v; break; }
+              }
+            }
+            const sendParams = {
               touser: settings._openid, templateId: TMPL_ID, lang: 'zh_CN',
+              miniprogramState: 'developer',
               data: {
                 thing8: { value: (course.name || '课程').slice(0, 20) },
                 time15: { value: matched.start || '00:00' },
-                thing4: { value: (course.location || '').slice(0, 20) },
+                thing4: { value: loc.slice(0, 20) },
                 thing14: { value: (course.teacher || '').slice(0, 20) },
-                thing5: { value: '距上课还有' + (matched.diff || 0) + '分钟' },
+                thing5: { value: building ? '点击查看教室位置' : '按时上课' },
               },
-            });
+            };
+            // 仅有效地点才附加导航跳转
+            if (building && loc !== '未排地点') {
+              sendParams.page = 'pages/map/search/search?keyword=' + encodeURIComponent(building);
+            }
+            await cloud.openapi.subscribeMessage.send(sendParams);
             sent++;
           } catch(e) {
             console.log('[reminder] send err:', e.errCode, e.message.slice(0,60));

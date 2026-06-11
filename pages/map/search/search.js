@@ -42,6 +42,11 @@ Page({
     this.setData({
       search_id: options.id,
     });
+    // 从通知跳转过来时，自动填入搜索词
+    if (options.keyword) {
+      this._autoKeyword = decodeURIComponent(options.keyword);
+      this.setData({ content: this._autoKeyword });
+    }
     // 历史搜索
     let _this = this;
     //_this.searchtype = options.searchtype;
@@ -70,6 +75,8 @@ Page({
         });
         // 调用热门搜索
         this.gethotSearch();
+        // 通知跳转：自动触发搜索
+        if (this._autoKeyword) { var that = this; setTimeout(function() { that.goSearch(); }, 500); }
       })
       .catch(err => {
         console.log('fail', err);
@@ -254,15 +261,18 @@ Page({
     let search_id = this.data.search_id;
     var pages = getCurrentPages();
     var prevPage = pages[pages.length - 2]; // 上一个页面
+
+    // 从通知跳转过来（无 search_id 且无上一页）→ 存终点到 storage 并跳地图
+    if (!search_id && !prevPage) {
+      wx.setStorageSync('end', { name: data.name, latitude: data.latitude, longitude: data.longitude });
+      wx.switchTab({ url: '/pages/map/map' });
+      return;
+    }
+
     if (search_id == 1) {
-      // 直接调用上一个页面对象的setData()方法，把数据存到上一个页面中去
-      prevPage.setData({
-        start: data,
-      });
+      prevPage.setData({ start: data });
     } else {
-      prevPage.setData({
-        end: data,
-      });
+      prevPage.setData({ end: data });
     }
 
     var id = e.currentTarget.id;
