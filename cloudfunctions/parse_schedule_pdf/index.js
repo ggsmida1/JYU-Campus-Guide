@@ -23,12 +23,65 @@ exports.main = async (event, context) => {
     });
 
     const blocks = [];
-    for (const pg of data.Pages) {
+    for (let pi = 0; pi < data.Pages.length; pi++) {
+      const pg = data.Pages[pi];
       if (!pg.Texts) continue;
       for (const t of pg.Texts) {
-        try { blocks.push({ x:t.x, y:t.y, text:decodeURIComponent(t.R[0].T) }); } catch(e) {}
+        try { blocks.push({ x:t.x, y:t.y, text:decodeURIComponent(t.R[0].T), page: pi }); } catch(e) {}
       }
     }
+
+    // ===== 跨页续接修复 =====
+    // 检测页边界处的不完整文本块，用字段数据中的教学班名称作为"桥梁"验证拼接
+    const isNoise = t => /课表|学号|打印时间|时间段|节次|星期|上午|下午|晚上|体育课对应|教学质量/.test(t);
+    const hasMark = t => /[★○●◇◆]/.test(t);
+
+    for (let pi = 1; pi < data.Pages.length; pi++) {
+      const prevPage = blocks.filter(b => b.page === pi - 1 && !isNoise(b.text) && b.text.trim().length > 1 && !/^\d{1,2}$/.test(b.text.trim())).sort((a,b) => b.y - a.y);
+      const currPage = blocks.filter(b => b.page === pi && !isNoise(b.text) && b.text.trim().length > 1 && !/^\d{1,2}$/.test(b.text.trim())).sort((a,b) => a.y - b.y);
+
+      if (!prevPage.length || !currPage.length) continue;
+
+      // 扫描上一页最后 3 块，找不完整片段
+      for (let ai = 0; ai < Math.min(prevPage.length, 3); ai++) {
+        const A = prevPage[ai];
+        const aText = A.text.trim();
+
+        // A 是不完整片段：不以类型标记结尾，纯中文，长度适中
+        if (hasMark(aText)) continue;
+        if (/[\d\/\(:]/.test(aText)) continue;
+        if (aText.length > 15 || aText.length < 2) continue;
+
+        // 向下扫描 B（下一页的前几块），找续接候选
+        for (let bi = 0; bi < Math.min(currPage.length, 15); bi++) {
+          const B = currPage[bi];
+          const bText = B.text.trim();
+          if (!bText || isNoise(bText) || /^\d{1,2}$/.test(bText)) continue;
+
+          // 收集 B 同列附近后续字段数据
+          const fieldBlocks = [];
+          for (let fj = bi; fj < Math.min(currPage.length, bi + 10); fj++) {
+            const fb = currPage[fj];
+            if (Math.abs(fb.x - B.x) <= 2.5) fieldBlocks.push(fb);
+          }
+          const fieldText = fieldBlocks.map(f => f.text).join('');
+
+          // 检查 B 是否含类型标记（续接尾）
+          if (hasMark(bText)) {
+            const bareB = bText.replace(/[★○●◇◆]/g, '');
+            const merged = aText + bareB;
+            if (fieldText.includes(merged) || fieldText.includes(aText)) {
+              console.log('[pdf] 跨页修复:', aText, '+', bText);
+              A.text = aText + bText;
+              B.text = '';
+              ai = 99; // 跳出外层循环
+              break;
+            }
+          }
+        }
+      }
+    }
+    // ===== 跨页续接修复结束 =====
 
     // 列边界
     const allVX = [];
@@ -50,10 +103,11 @@ exports.main = async (event, context) => {
     });
     const colToWeekday = {}; for (const [w,c] of Object.entries(headerColMap)) colToWeekday[c] = parseInt(w);
 
-    // 每列聚合文本
+    // 每列聚合文本（页1用3.8跳过表头，后续页直接取）
     const colTexts = {};
     for (const b of blocks) {
-      if (b.y < 3.8 || b.x < 1 || b.text.trim().length < 1) continue;
+      const yMin = (b.page === 0) ? 3.8 : 0;
+      if (b.y < yMin || b.x < 1 || b.text.trim().length < 1 || b.text === '') continue;
       if (/星期|节次|时间段|上午|下午|晚上/.test(b.text)) continue;
       if (/^\d{1,2}$/.test(b.text.trim())) continue;
       let col = -1;

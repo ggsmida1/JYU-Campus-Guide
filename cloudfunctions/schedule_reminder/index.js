@@ -7,6 +7,7 @@ const PERIOD_TIMES = [
   { slot:1, start:'08:00' },{ slot:2, start:'08:55' },{ slot:3, start:'10:00' },
   { slot:4, start:'10:55' },{ slot:5, start:'14:30' },{ slot:6, start:'15:25' },
   { slot:7, start:'16:20' },{ slot:8, start:'17:15' },{ slot:9, start:'19:30' },{ slot:10, start:'20:25' },
+  { slot:11, start:'21:15' },
 ];
 
 function getUpcoming(now, maxAdv) {
