@@ -62,9 +62,11 @@
   font-size: 24rpx;
   color: #1976D2;
 }
-.action-text.delete {
-  color: #e74c3c;
-}
+.action-text.delete { color: #e74c3c; }
+.minute-input { width: 80rpx; height: 56rpx; border: 1rpx solid #e0e0e0; border-radius: 6rpx; text-align: center; font-size: 28rpx; padding: 0 4rpx; }
+.minute-label { font-size: 22rpx; color: #999; margin-right: 10rpx; }
+.quick-btns { display: flex; flex-wrap: wrap; gap: 12rpx; }
+.quick-btn { padding: 12rpx 24rpx; background: #E3F2FD; color: #1976D2; border-radius: 8rpx; font-size: 26rpx; }
 .add-btn {
   background: #E3F2FD;
   color: #1976D2;

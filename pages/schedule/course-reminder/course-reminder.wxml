@@ -1,61 +1,46 @@
 <!--pages/schedule/course-reminder.wxml-->
 <view class="reminder-page">
-  <!-- 课程信息 -->
   <view class="course-header">
     <text class="course-name">{{courseName}}</text>
     <text class="course-sub">提醒设置</text>
   </view>
 
-  <!-- 已有提醒列表 -->
   <view class="section">
     <view class="section-title">已设置的提醒</view>
-
     <view class="empty" wx:if="{{!loading && reminders.length === 0}}">
-      <text>暂无提醒设置</text>
-      <text class="empty-hint">点击下方按钮添加</text>
+      <text>暂无提醒</text>
+      <text class="empty-hint">点击下方添加</text>
     </view>
 
-    <view
-      class="reminder-item"
-      wx:for="{{reminders}}"
-      wx:key="_id"
-    >
+    <view class="reminder-item" wx:for="{{reminders}}" wx:key="_id">
       <view class="reminder-info">
-        <text class="reminder-type">
-          {{item.typeLabel}}
-        </text>
-        <text class="reminder-advance">提前 {{item.advanceMinutes}} 分钟</text>
+        <text class="reminder-type">{{item.typeLabel || '上课提醒'}}</text>
       </view>
       <view class="reminder-actions">
-        <picker
-          range="{{advanceOptions}}"
-          range-key="label"
-          data-index="{{index}}"
-          bindchange="onAdvanceChange"
-        >
-          <view class="action-text">调整</view>
-        </picker>
-        <switch
-          checked="{{item.enabled}}"
-          data-index="{{index}}"
-          bindchange="onToggleReminder"
-        />
+        <input class="minute-input" type="number" value="{{item.advanceMinutes}}" data-index="{{index}}" bindblur="onAdvanceInput" />
+        <text class="minute-label">分钟前</text>
+        <switch checked="{{item.enabled}}" data-index="{{index}}" bindchange="onToggleReminder" />
         <view class="action-text delete" data-index="{{index}}" bindtap="onDeleteReminder">删除</view>
       </view>
     </view>
   </view>
 
-  <!-- 添加提醒 -->
+  <view class="section">
+    <text class="section-title">快捷选择</text>
+    <view class="quick-btns">
+      <view class="quick-btn" data-min="5" bindtap="onQuickAdvance">5分钟</view>
+      <view class="quick-btn" data-min="10" bindtap="onQuickAdvance">10分钟</view>
+      <view class="quick-btn" data-min="15" bindtap="onQuickAdvance">15分钟</view>
+      <view class="quick-btn" data-min="30" bindtap="onQuickAdvance">30分钟</view>
+      <view class="quick-btn" data-min="60" bindtap="onQuickAdvance">1小时</view>
+    </view>
+  </view>
+
   <view class="section">
     <button class="add-btn" bindtap="onAddReminder">+ 添加上课提醒</button>
   </view>
 
-  <!-- 授权 -->
   <view class="section">
-    <view class="section-title">消息推送授权</view>
-    <button class="subscribe-btn" bindtap="onSubscribe">
-      授权接收提醒消息
-    </button>
-    <view class="hint">如未授权，提醒无法推送到手机</view>
+    <button class="subscribe-btn" bindtap="onSubscribe">授权接收提醒消息</button>
   </view>
 </view>

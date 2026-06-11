@@ -400,13 +400,9 @@ Page({
     wx.cloud.callFunction({ name: 'schedule_reminder', data: { force: true } }).then(res => {
       wx.hideLoading();
       const r = res.result || {};
-      const diag = r.diag || {};
-      const steps = (diag.steps || []).join('；');
       wx.showModal({
         title: r.sent > 0 ? ('✅ 已触发' + r.sent + '条') : '❌ 未匹配',
-        content: '时间: ' + (diag.time || '') + '\n周' + (diag.weekday || '?') +
-          '\nsent=' + (r.sent || 0) +
-          '\n\n诊断: ' + (steps || r.msg || '无'),
+        content: 'sent=' + (r.sent || 0) + '\n诊断: ' + (r.diag || r.msg || '无'),
         showCancel: false,
       });
     }).catch(() => { wx.hideLoading(); wx.showToast({ title: '云函数错误', icon: 'none' }); });

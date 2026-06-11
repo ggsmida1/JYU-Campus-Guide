@@ -11,11 +11,12 @@ const PERIOD_TIMES = [
 
 function getUpcoming(now, maxAdv) {
   const cur = now.getHours()*60+now.getMinutes();
-  return PERIOD_TIMES.filter(p => {
+  return PERIOD_TIMES.map(p => {
     const [h,m] = p.start.split(':').map(Number);
-    const diff = h*60+m - cur;
-    return diff >= 0 && diff <= maxAdv;
-  }).map(p => ({ ...p, diff: p.start.split(':').map(Number)[0]*60+ +p.start.split(':')[1] - cur }));
+    let diff = h*60+m - cur;
+    if (diff < 0) diff += 24*60; // 跨天：考虑明天
+    return { ...p, diff };
+  }).filter(p => p.diff <= maxAdv);
 }
 
 function getWeekday(now) { const d = now.getDay(); return d===0?7:d; }
@@ -49,24 +50,38 @@ exports.main = async (event, context) => {
       rr.data.forEach(r => { if (!seen.has(r._openid)) { seen.add(r._openid); settingsList.push({ _openid: r._openid, reminderEnabled: true, defaultAdvance: 15, quietStart: null, quietEnd: null }); } });
     }
 
-    let sent = 0;
+    let sent = 0, diag = [];
     for (const settings of settingsList) {
       try {
         if (isQuiet(settings.quietStart, settings.quietEnd, now)) continue;
         const reminders = await db.collection('reminders').where({ _openid: settings._openid, enabled: true }).get();
-        if (!reminders.data.length) continue;
 
-        const cids = [...new Set(reminders.data.map(r => r.course_id))];
-        const cr = await db.collection('courses').where({ _openid: settings._openid, _id: db.command.in(cids) }).get();
-        const courses = cr.data.filter(c => c.weekday === wd);
-        if (!courses.length) continue;
+        let courseList = [];
+        if (reminders.data.length > 0) {
+          // 有单独提醒：获取关联课程
+          const cids = [...new Set(reminders.data.map(r => r.course_id))];
+          const cr = await db.collection('courses').where({ _openid: settings._openid, _id: db.command.in(cids) }).get();
+          courseList = force ? cr.data : cr.data.filter(c => c.weekday === wd);
+        } else {
+          // 无单独提醒但有全局设置：今天所有课都提醒
+          const cr = force
+            ? await db.collection('courses').where({ _openid: settings._openid }).get()
+            : await db.collection('courses').where({ _openid: settings._openid, weekday: wd }).get();
+          courseList = cr.data;
+          // 为每门课构造虚拟提醒
+          courseList.forEach(c => {
+            reminders.data.push({ _id: 'v_' + c._id, course_id: c._id, advanceMinutes: settings.defaultAdvance || 15, enabled: true });
+          });
+        }
+        if (!courseList.length) { diag.push('today_no_courses'); continue; }
 
         const maxAdv = force ? 1440 : Math.max(60, ...reminders.data.map(r => r.advanceMinutes || 15));
+        diag.push('courses:' + courseList.length + ' advMax:' + maxAdv);
         const upcoming = getUpcoming(now, maxAdv);
         if (!upcoming.length) continue;
 
         for (const reminder of reminders.data) {
-          const course = courses.find(c => c._id === reminder.course_id);
+          const course = courseList.find(c => c._id === reminder.course_id);
           if (!course) continue;
           const adv = reminder.advanceMinutes || settings.defaultAdvance || 15;
           const matched = force
@@ -93,7 +108,7 @@ exports.main = async (event, context) => {
       } catch(ue) { console.log('[reminder] user err:', ue.message); }
     }
     console.log('[reminder] sent:', sent);
-    return { success: true, sent };
+    return { success: true, sent, diag: diag.join(';') };
   } catch(err) {
     console.error('[reminder] crash:', err.message);
     return { success: false, errMsg: err.message };

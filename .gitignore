@@ -33,3 +33,17 @@ miniprogram_npm/
 # 临时文件
 temp/
 tmp/
+
+# 个人课表 PDF（不提交到仓库）
+*.pdf
+
+# 测试生成的 JSON
+courses_output.json
+courses_import.json
+schedule_parsed.json
+
+# 开发调试用脚本
+scripts/
+
+# npm 测试依赖遗留
+package-lock.json
