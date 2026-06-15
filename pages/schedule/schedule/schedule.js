@@ -222,7 +222,8 @@ Page({
     const border = c.border || '#999';
     const text = c.text || '#333';
     const slots = (course.endSlot - course.startSlot + 1) || 1;
-    const height = slots * 52; // 每节次 52rpx（含课间比例）
+    const rowHeight = 100;
+    const height = slots * rowHeight;
     return `background:${bg};border-left:3px solid ${border};color:${text};height:${height}rpx`;
   },
 
