@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "openapi": [
+      "subscribeMessage.send"
+    ]
+  },
+  "triggers": [
+    {
+      "name": "minute_trigger",
+      "type": "timer",
+      "config": "0 */1 * * * * *"
+    }
+  ],
+  "timeout": 60
+}

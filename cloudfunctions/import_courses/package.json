@@ -1,0 +1,14 @@
+{
+  "name": "import_courses",
+  "version": "1.0.0",
+  "description": "批量导入课表",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "*"
+  }
+}

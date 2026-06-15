@@ -107,6 +107,12 @@
           bindtap="link"
         />
       </view>
+
+      <view class="schedule-entry" bindtap="toSchedule">
+        <view class="schedule-entry-icon">📋</view>
+        <view class="schedule-entry-text">我的课表</view>
+        <view class="schedule-entry-arrow">〉</view>
+      </view>
     </view>
   </view>
 

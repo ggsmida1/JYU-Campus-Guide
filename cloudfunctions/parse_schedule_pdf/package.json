@@ -1,0 +1,15 @@
+{
+  "name": "parse_schedule_pdf",
+  "version": "1.0.0",
+  "description": "解析教务系统课表 PDF",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "*",
+    "pdf2json": "4.0.3"
+  }
+}

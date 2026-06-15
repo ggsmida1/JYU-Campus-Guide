@@ -1,0 +1,121 @@
+<!--pages/schedule/reminder-settings.wxml-->
+<view class="settings-page">
+  <!-- 全局开关 -->
+  <view class="section">
+    <view class="section-title">提醒开关</view>
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">启用提醒</text>
+        <text class="item-desc">关闭后所有课程提醒将暂停</text>
+      </view>
+      <switch
+        checked="{{settings.reminderEnabled}}"
+        data-field="reminderEnabled"
+        bindchange="onSwitchChange"
+      />
+    </view>
+  </view>
+
+  <!-- 提醒时机 -->
+  <view class="section">
+    <view class="section-title">提醒时机</view>
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">默认提前时间</text>
+      </view>
+      <picker
+        range="{{advanceOptions}}"
+        range-key="label"
+        data-field="defaultAdvance"
+        bindchange="onPickerChange"
+      >
+        <view class="picker-value">{{settings.defaultAdvance}} 分钟前</view>
+      </picker>
+    </view>
+  </view>
+
+  <!-- 免打扰 -->
+  <view class="section">
+    <view class="section-title">免打扰时段</view>
+    <view class="setting-row">
+      <view class="setting-item half">
+        <text class="item-label">开始时间</text>
+        <input
+          class="time-input"
+          type="time"
+          value="{{settings.quietStart}}"
+          data-field="quietStart"
+          bindinput="onInputChange"
+          bindblur="onInputBlur"
+        />
+      </view>
+      <view class="setting-item half">
+        <text class="item-label">结束时间</text>
+        <input
+          class="time-input"
+          type="time"
+          value="{{settings.quietEnd}}"
+          data-field="quietEnd"
+          bindinput="onInputChange"
+          bindblur="onInputBlur"
+        />
+      </view>
+    </view>
+    <view class="hint">免打扰时段内不会发送提醒</view>
+  </view>
+
+  <!-- 振动 -->
+  <view class="section">
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">振动</text>
+      </view>
+      <switch
+        checked="{{settings.vibrate}}"
+        data-field="vibrate"
+        bindchange="onSwitchChange"
+      />
+    </view>
+  </view>
+
+  <!-- 学期设置 -->
+  <view class="section">
+    <view class="section-title">学期设置</view>
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">学期开始日期</text>
+      </view>
+      <input
+        class="date-input"
+        type="text"
+        placeholder="2026-02-24"
+        value="{{settings.semesterStart}}"
+        data-field="semesterStart"
+        bindinput="onInputChange"
+        bindblur="onInputBlur"
+      />
+    </view>
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">学期总周数</text>
+      </view>
+      <input
+        class="num-input"
+        type="number"
+        value="{{settings.totalWeeks}}"
+        data-field="totalWeeks"
+        bindinput="onInputChange"
+        bindblur="onNumberBlur"
+      />
+    </view>
+  </view>
+
+  <!-- 订阅消息授权 -->
+  <view class="section">
+    <view class="section-title">消息推送授权</view>
+    <button class="subscribe-btn" bindtap="onSubscribeMessage">
+      授权上课提醒消息
+    </button>
+    <view class="hint">需要授权才能收到上课提醒推送</view>
+  </view>
+</view>
