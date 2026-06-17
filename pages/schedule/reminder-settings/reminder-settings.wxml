@@ -78,6 +78,18 @@
     </view>
   </view>
 
+  <!-- 动态提前量 -->
+  <view class="section">
+    <view class="setting-item">
+      <view class="item-left">
+        <text class="item-label">🚶 步行时间预估</text>
+        <text class="item-desc">根据距离自动延长提前量</text>
+      </view>
+      <switch checked="{{settings.dynamicAdvance}}" data-field="dynamicAdvance" bindchange="onSwitchChange" />
+    </view>
+    <view class="hint" wx:if="{{settings.dynamicAdvance}}">开启后提醒会考虑步行到教室的时间，如果走路比预设提前量更久，会自动提前提醒。</view>
+  </view>
+
   <!-- 学期设置 -->
   <view class="section">
     <view class="section-title">学期设置</view>

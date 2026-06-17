@@ -1,0 +1,7 @@
+{
+  "name": "get_walking_time",
+  "version": "1.0.0",
+  "description": "计算步行时间",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "*" }
+}

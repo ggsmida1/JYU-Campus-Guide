@@ -6,6 +6,7 @@ Page({
       defaultAdvance: 15,
       quietStart: '22:00',
       quietEnd: '07:00',
+      dynamicAdvance: false,
       semesterStart: '2026-02-24',
       totalWeeks: 20,
       vibrate: true,

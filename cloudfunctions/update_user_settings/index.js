@@ -19,6 +19,7 @@ exports.main = async (event, context) => {
     semesterStart,
     totalWeeks,
     vibrate,
+    dynamicAdvance,
   } = event;
 
   const updateData = {};
@@ -29,6 +30,7 @@ exports.main = async (event, context) => {
   if (semesterStart !== undefined) updateData.semesterStart = semesterStart;
   if (totalWeeks !== undefined) updateData.totalWeeks = totalWeeks;
   if (vibrate !== undefined) updateData.vibrate = vibrate;
+  if (dynamicAdvance !== undefined) updateData.dynamicAdvance = dynamicAdvance;
   updateData.updateTime = db.serverDate();
 
   if (Object.keys(updateData).length <= 1) {

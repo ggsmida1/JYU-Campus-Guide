@@ -90,6 +90,25 @@ exports.main = async (event, context) => {
             : upcoming.find(s => s.slot >= +course.startSlot && s.slot <= +course.endSlot && s.diff <= adv);
           if (!matched) continue;
 
+          // ==== 动态提前量 ====
+          let effectiveAdv = adv;
+          if (settings.dynamicAdvance && course.location) {
+            try {
+              const walkRes = await cloud.callFunction({
+                name: 'get_walking_time',
+                data: { toLocation: course.location },
+              });
+              if (walkRes.result && walkRes.result.success && walkRes.result.duration) {
+                effectiveAdv = Math.max(adv, walkRes.result.duration);
+                diag.push('walk:' + walkRes.result.duration + 'min→adv' + effectiveAdv);
+              } else {
+                diag.push('walk_fail:' + (walkRes.result ? walkRes.result.errMsg : 'no_result'));
+              }
+            } catch(e) { diag.push('walk_err:' + (e.message || '').substring(0,30)); }
+          } else if (settings.dynamicAdvance) {
+            diag.push('walk_skip:noloc');
+          }
+
           try {
             // 楼名映射（课表缩写→数据库名称）
             const BUILDING_MAP = {
@@ -116,7 +135,7 @@ exports.main = async (event, context) => {
                 time15: { value: matched.start || '00:00' },
                 thing4: { value: loc.slice(0, 20) },
                 thing14: { value: (course.teacher || '').slice(0, 20) },
-                thing5: { value: building ? '点击查看教室位置' : '按时上课' },
+                thing5: { value: effectiveAdv > adv ? ('🚶步行' + effectiveAdv + '分钟' + (building ? '|点此导航' : '')) : (building ? '点击查看教室位置' : '按时上课') },
               },
             };
             // 仅有效地点才附加导航跳转
